@@ -1,35 +1,113 @@
-public class BookMyStayApp {
 
-    // Static variables representing room availability
-    static int singleRoomAvailability = 5;
-    static int doubleRoomAvailability = 3;
-    static int suiteRoomAvailability = 2;
+import java.util.HashMap;
+import java.util.Map;
+
+public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Hotel Room Initialization\n");
+        System.out.println("Hotel Room Initialization with Centralized Inventory\n");
 
-        // Create room objects using polymorphism
+        // Create RoomInventory and register room types with initial availability
+        RoomInventory inventory = new RoomInventory();
+        inventory.registerRoomType("Single Room", 5);
+        inventory.registerRoomType("Double Room", 3);
+        inventory.registerRoomType("Suite Room", 2);
+
+        // Create room objects (domain modeling)
         Room singleRoom = new SingleRoom(1, 250, 1500.0);
         Room doubleRoom = new DoubleRoom(2, 400, 2500.0);
         Room suiteRoom = new SuiteRoom(3, 750, 5000.0);
 
-        // Display room details and availability
-        displayRoomDetails(singleRoom, singleRoomAvailability);
-        displayRoomDetails(doubleRoom, doubleRoomAvailability);
-        displayRoomDetails(suiteRoom, suiteRoomAvailability);
+        // Display room details along with their availability from centralized inventory
+        displayRoomDetails(singleRoom, inventory);
+        displayRoomDetails(doubleRoom, inventory);
+        displayRoomDetails(suiteRoom, inventory);
 
-        System.out.println("Application executed successfully!");
+        // Example: Update availability after a booking
+        System.out.println("\nBooking 1 Single Room...");
+        boolean booked = inventory.bookRoom("Single Room");
+        System.out.println(booked ? "Booking successful!" : "Booking failed. No rooms available.");
+
+        // Show updated availability
+        System.out.println("\nUpdated Inventory:");
+        displayRoomDetails(singleRoom, inventory);
+
+        System.out.println("\nApplication executed successfully!");
     }
 
-    // Helper method to print room details and availability
-    public static void displayRoomDetails(Room room, int availability) {
+    // Helper method to print room details with inventory availability
+    public static void displayRoomDetails(Room room, RoomInventory inventory) {
         System.out.println(room.getRoomType() + ":");
         System.out.println("Beds: " + room.getBeds());
         System.out.println("Size: " + room.getSize() + " sqft");
         System.out.println("Price per night: " + room.getPrice());
-        System.out.println("Available: " + availability);
+        System.out.println("Available: " + inventory.getAvailability(room.getRoomType()));
         System.out.println();
+    }
+}
+
+/**
+ * Class responsible for managing room availability using a centralized HashMap.
+ */
+class RoomInventory {
+
+    private final Map<String, Integer> availabilityMap;
+
+    public RoomInventory() {
+        this.availabilityMap = new HashMap<>();
+    }
+
+    /**
+     * Registers a new room type with its initial availability.
+     *
+     * @param roomType Room type name
+     * @param initialAvailability Number of available rooms
+     */
+    public void registerRoomType(String roomType, int initialAvailability) {
+        if (roomType == null || roomType.isEmpty() || initialAvailability < 0) {
+            throw new IllegalArgumentException("Invalid room type or availability");
+        }
+        availabilityMap.put(roomType, initialAvailability);
+    }
+
+    /**
+     * Retrieves current availability of a room type.
+     *
+     * @param roomType Room type name
+     * @return Number of available rooms or 0 if none registered
+     */
+    public int getAvailability(String roomType) {
+        return availabilityMap.getOrDefault(roomType, 0);
+    }
+
+    /**
+     * Attempts to book a room by reducing availability by one if possible.
+     *
+     * @param roomType Room type name
+     * @return true if booking succeeded, false if no rooms available
+     */
+    public boolean bookRoom(String roomType) {
+        int available = availabilityMap.getOrDefault(roomType, 0);
+        if (available > 0) {
+            availabilityMap.put(roomType, available - 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Method to add rooms to the inventory (e.g., cancellations or new rooms).
+     *
+     * @param roomType Room type name
+     * @param count Number of rooms to add
+     */
+    public void addRooms(String roomType, int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("Count must be positive");
+        }
+        int current = availabilityMap.getOrDefault(roomType, 0);
+        availabilityMap.put(roomType, current + count);
     }
 }
 
@@ -37,9 +115,9 @@ public class BookMyStayApp {
  * Abstract Room class representing common properties of all room types.
  */
 abstract class Room {
-    private int beds;
-    private int size;      // size in sqft
-    private double price;  // price per night
+    private final int beds;
+    private final int size;      // size in sqft
+    private final double price;  // price per night
 
     public Room(int beds, int size, double price) {
         this.beds = beds;
