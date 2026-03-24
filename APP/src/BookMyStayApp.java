@@ -1,79 +1,93 @@
 import java.util.*;
 
+/**
+ * Main Application
+ */
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Add-On Service Selection");
+        System.out.println("Booking History & Reporting");
 
-        // Step 1: Simulate an already confirmed reservation (from UC6)
-        String reservationId = "Single-1";
+        // Step 1: Simulate confirmed reservations with guest names
+        Reservation r1 = new Reservation("Single-1", "Single", "Abhi");
+        Reservation r2 = new Reservation("Double-1", "Double", "Subha");
+        Reservation r3 = new Reservation("Suite-1", "Suite", "Vanmathi");
 
-        // Step 2: Create Add-On Services
-        AddOnService wifi = new AddOnService("WiFi", 500.0);
-        AddOnService breakfast = new AddOnService("Breakfast", 1000.0);
+        // Step 2: Store in Booking History
+        BookingHistory history = new BookingHistory();
+        history.addReservation(r1);
+        history.addReservation(r2);
+        history.addReservation(r3);
 
-        // Step 3: Add services to reservation
-        AddOnServiceManager manager = new AddOnServiceManager();
-        manager.addService(reservationId, wifi);
-        manager.addService(reservationId, breakfast);
-
-        // Step 4: Calculate total add-on cost
-        double totalCost = manager.calculateTotalCost(reservationId);
-
-        // Step 5: Display result
-        System.out.println("Reservation ID: " + reservationId);
-        System.out.println("Total Add-On Cost: " + totalCost);
-    }
-}
-
-/**
- * Add-On Service (Value-added feature)
- */
-class AddOnService {
-    private final String serviceName;
-    private final double cost;
-
-    public AddOnService(String serviceName, double cost) {
-        this.serviceName = serviceName;
-        this.cost = cost;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public double getCost() {
-        return cost;
-    }
-}
-
-/**
- * Manages mapping: Reservation → List of Services
- */
-class AddOnServiceManager {
-
-    // Map<ReservationID, List<Services>>
-    private final Map<String, List<AddOnService>> serviceMap = new HashMap<>();
-
-    /**
-     * Add a service to a reservation
-     */
-    public void addService(String reservationId, AddOnService service) {
-        serviceMap.putIfAbsent(reservationId, new ArrayList<>());
-        serviceMap.get(reservationId).add(service);
-    }
-
-    /**
-     * Calculate total cost of services for a reservation
-     */
-    public double calculateTotalCost(String reservationId) {
-        List<AddOnService> services = serviceMap.getOrDefault(reservationId, new ArrayList<>());
-
-        double total = 0.0;
-        for (AddOnService service : services) {
-            total += service.getCost();
+        // Step 3: Admin views booking history
+        System.out.println("\nBooking History Report:");
+        for (Reservation r : history.getConfirmedReservations()) {
+            System.out.println("Guest: " + r.getGuestName() + ", Room Type: " + r.getRoomType());
         }
-        return total;
+    }
+}
+
+/**
+ * Reservation Entity with Guest Name
+ */
+class Reservation {
+    private final String reservationId;
+    private final String roomType;
+    private final String guestName;
+
+    public Reservation(String reservationId, String roomType, String guestName) {
+        this.reservationId = reservationId;
+        this.roomType = roomType;
+        this.guestName = guestName;
+    }
+
+    public String getReservationId() {
+        return reservationId;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public String getGuestName() {
+        return guestName;
+    }
+}
+
+/**
+ * Booking History Class (non-public to allow single file compilation)
+ */
+class BookingHistory {
+
+    /**
+     * List that stores confirmed reservations.
+     */
+    private List<Reservation> confirmedReservations;
+
+    /**
+     * Initializes an empty booking history.
+     */
+    public BookingHistory() {
+        confirmedReservations = new ArrayList<>();
+    }
+
+    /**
+     * Adds a confirmed reservation
+     * to booking history.
+     *
+     * @param reservation confirmed booking
+     */
+    public void addReservation(Reservation reservation) {
+        confirmedReservations.add(reservation);
+    }
+
+    /**
+     * Returns all confirmed reservations.
+     *
+     * @return list of reservations
+     */
+    public List<Reservation> getConfirmedReservations() {
+        return confirmedReservations;
     }
 }
