@@ -1,137 +1,96 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Room Search\n");
+        // Display application header
+        System.out.println("Booking Request Queue");
 
-        // Centralized Inventory Initialization
-        RoomInventory inventory = new RoomInventory();
-        inventory.registerRoomType("Single Room", 5);
-        inventory.registerRoomType("Double Room", 3);
-        inventory.registerRoomType("Suite Room", 2);
+        // Initialize booking queue
+        BookingRequestQueue bookingQueue = new BookingRequestQueue();
 
-        // Domain Objects
-        Room singleRoom = new SingleRoom(1, 250, 1500.0);
-        Room doubleRoom = new DoubleRoom(2, 400, 2500.0);
-        Room suiteRoom = new SuiteRoom(3, 750, 5000.0);
+        // Create booking requests
+        Reservation r1 = new Reservation("Abhi", "Single");
+        Reservation r2 = new Reservation("Subha", "Double");
+        Reservation r3 = new Reservation("Vanmathi", "Suite");
 
-        // Perform Read-Only Search (No State Change)
-        searchAndDisplay(singleRoom, inventory);
-        searchAndDisplay(doubleRoom, inventory);
-        searchAndDisplay(suiteRoom, inventory);
+        // Add requests to queue (FIFO order)
+        bookingQueue.addRequest(r1);
+        bookingQueue.addRequest(r2);
+        bookingQueue.addRequest(r3);
 
-        System.out.println("Search completed successfully!");
+        // Process requests in FIFO order
+        while (bookingQueue.hasPendingRequests()) {
+            Reservation request = bookingQueue.getNextRequest();
+            System.out.println("Processing booking for Guest: "
+                    + request.getGuestName()
+                    + ", Room Type: "
+                    + request.getRoomType());
+        }
+
+        System.out.println("\nAll booking requests processed fairly!");
+    }
+}
+
+/**
+ * Represents a booking request (Guest intent)
+ */
+class Reservation {
+    private final String guestName;
+    private final String roomType;
+
+    public Reservation(String guestName, String roomType) {
+        if (guestName == null || guestName.isEmpty() ||
+                roomType == null || roomType.isEmpty()) {
+            throw new IllegalArgumentException("Invalid reservation details");
+        }
+        this.guestName = guestName;
+        this.roomType = roomType;
+    }
+
+    public String getGuestName() {
+        return guestName;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+}
+
+/**
+ * Booking Request Queue (FIFO)
+ */
+class BookingRequestQueue {
+
+    private final Queue<Reservation> queue;
+
+    public BookingRequestQueue() {
+        this.queue = new LinkedList<>();
     }
 
     /**
-     * Read-only search method (Use Case 4)
-     * Displays room details only if available > 0
+     * Add request to queue
      */
-    public static void searchAndDisplay(Room room, RoomInventory inventory) {
-        int available = inventory.getAvailability(room.getRoomType());
-
-        // Validation: show only available rooms
-        if (available > 0) {
-            System.out.println(room.getRoomType() + ":");
-            System.out.println("Beds: " + room.getBeds());
-            System.out.println("Size: " + room.getSize() + " sqft");
-            System.out.println("Price per night: " + room.getPrice());
-            System.out.println("Available: " + available);
-            System.out.println();
+    public void addRequest(Reservation reservation) {
+        if (reservation == null) {
+            throw new IllegalArgumentException("Reservation cannot be null");
         }
-    }
-}
-
-/**
- * Centralized Inventory (Read-Only Access for Search)
- */
-class RoomInventory {
-
-    private final Map<String, Integer> availabilityMap;
-
-    public RoomInventory() {
-        this.availabilityMap = new HashMap<>();
-    }
-
-    public void registerRoomType(String roomType, int initialAvailability) {
-        if (roomType == null || roomType.isEmpty() || initialAvailability < 0) {
-            throw new IllegalArgumentException("Invalid input");
-        }
-        availabilityMap.put(roomType, initialAvailability);
+        queue.offer(reservation); // FIFO insertion
     }
 
     /**
-     * Read-only method
+     * Get next request (FIFO removal)
      */
-    public int getAvailability(String roomType) {
-        return availabilityMap.getOrDefault(roomType, 0);
-    }
-}
-
-/**
- * Abstract Room class
- */
-abstract class Room {
-    private final int beds;
-    private final int size;
-    private final double price;
-
-    public Room(int beds, int size, double price) {
-        this.beds = beds;
-        this.size = size;
-        this.price = price;
+    public Reservation getNextRequest() {
+        return queue.poll(); // removes head of queue
     }
 
-    public int getBeds() {
-        return beds;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public double getPrice() {
-        return price;
-    }
-
-    public abstract String getRoomType();
-}
-
-/**
- * Room Types
- */
-class SingleRoom extends Room {
-    public SingleRoom(int beds, int size, double price) {
-        super(beds, size, price);
-    }
-
-    @Override
-    public String getRoomType() {
-        return "Single Room";
-    }
-}
-
-class DoubleRoom extends Room {
-    public DoubleRoom(int beds, int size, double price) {
-        super(beds, size, price);
-    }
-
-    @Override
-    public String getRoomType() {
-        return "Double Room";
-    }
-}
-
-class SuiteRoom extends Room {
-    public SuiteRoom(int beds, int size, double price) {
-        super(beds, size, price);
-    }
-
-    @Override
-    public String getRoomType() {
-        return "Suite Room";
+    /**
+     * Check if queue has pending requests
+     */
+    public boolean hasPendingRequests() {
+        return !queue.isEmpty();
     }
 }
