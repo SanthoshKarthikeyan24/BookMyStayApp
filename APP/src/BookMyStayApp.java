@@ -1,4 +1,3 @@
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -6,49 +5,48 @@ public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("Hotel Room Initialization with Centralized Inventory\n");
+        System.out.println("Room Search\n");
 
-        // Create RoomInventory and register room types with initial availability
+        // Centralized Inventory Initialization
         RoomInventory inventory = new RoomInventory();
         inventory.registerRoomType("Single Room", 5);
         inventory.registerRoomType("Double Room", 3);
         inventory.registerRoomType("Suite Room", 2);
 
-        // Create room objects (domain modeling)
+        // Domain Objects
         Room singleRoom = new SingleRoom(1, 250, 1500.0);
         Room doubleRoom = new DoubleRoom(2, 400, 2500.0);
         Room suiteRoom = new SuiteRoom(3, 750, 5000.0);
 
-        // Display room details along with their availability from centralized inventory
-        displayRoomDetails(singleRoom, inventory);
-        displayRoomDetails(doubleRoom, inventory);
-        displayRoomDetails(suiteRoom, inventory);
+        // Perform Read-Only Search (No State Change)
+        searchAndDisplay(singleRoom, inventory);
+        searchAndDisplay(doubleRoom, inventory);
+        searchAndDisplay(suiteRoom, inventory);
 
-        // Example: Update availability after a booking
-        System.out.println("\nBooking 1 Single Room...");
-        boolean booked = inventory.bookRoom("Single Room");
-        System.out.println(booked ? "Booking successful!" : "Booking failed. No rooms available.");
-
-        // Show updated availability
-        System.out.println("\nUpdated Inventory:");
-        displayRoomDetails(singleRoom, inventory);
-
-        System.out.println("\nApplication executed successfully!");
+        System.out.println("Search completed successfully!");
     }
 
-    // Helper method to print room details with inventory availability
-    public static void displayRoomDetails(Room room, RoomInventory inventory) {
-        System.out.println(room.getRoomType() + ":");
-        System.out.println("Beds: " + room.getBeds());
-        System.out.println("Size: " + room.getSize() + " sqft");
-        System.out.println("Price per night: " + room.getPrice());
-        System.out.println("Available: " + inventory.getAvailability(room.getRoomType()));
-        System.out.println();
+    /**
+     * Read-only search method (Use Case 4)
+     * Displays room details only if available > 0
+     */
+    public static void searchAndDisplay(Room room, RoomInventory inventory) {
+        int available = inventory.getAvailability(room.getRoomType());
+
+        // Validation: show only available rooms
+        if (available > 0) {
+            System.out.println(room.getRoomType() + ":");
+            System.out.println("Beds: " + room.getBeds());
+            System.out.println("Size: " + room.getSize() + " sqft");
+            System.out.println("Price per night: " + room.getPrice());
+            System.out.println("Available: " + available);
+            System.out.println();
+        }
     }
 }
 
 /**
- * Class responsible for managing room availability using a centralized HashMap.
+ * Centralized Inventory (Read-Only Access for Search)
  */
 class RoomInventory {
 
@@ -58,66 +56,28 @@ class RoomInventory {
         this.availabilityMap = new HashMap<>();
     }
 
-    /**
-     * Registers a new room type with its initial availability.
-     *
-     * @param roomType Room type name
-     * @param initialAvailability Number of available rooms
-     */
     public void registerRoomType(String roomType, int initialAvailability) {
         if (roomType == null || roomType.isEmpty() || initialAvailability < 0) {
-            throw new IllegalArgumentException("Invalid room type or availability");
+            throw new IllegalArgumentException("Invalid input");
         }
         availabilityMap.put(roomType, initialAvailability);
     }
 
     /**
-     * Retrieves current availability of a room type.
-     *
-     * @param roomType Room type name
-     * @return Number of available rooms or 0 if none registered
+     * Read-only method
      */
     public int getAvailability(String roomType) {
         return availabilityMap.getOrDefault(roomType, 0);
     }
-
-    /**
-     * Attempts to book a room by reducing availability by one if possible.
-     *
-     * @param roomType Room type name
-     * @return true if booking succeeded, false if no rooms available
-     */
-    public boolean bookRoom(String roomType) {
-        int available = availabilityMap.getOrDefault(roomType, 0);
-        if (available > 0) {
-            availabilityMap.put(roomType, available - 1);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Method to add rooms to the inventory (e.g., cancellations or new rooms).
-     *
-     * @param roomType Room type name
-     * @param count Number of rooms to add
-     */
-    public void addRooms(String roomType, int count) {
-        if (count <= 0) {
-            throw new IllegalArgumentException("Count must be positive");
-        }
-        int current = availabilityMap.getOrDefault(roomType, 0);
-        availabilityMap.put(roomType, current + count);
-    }
 }
 
 /**
- * Abstract Room class representing common properties of all room types.
+ * Abstract Room class
  */
 abstract class Room {
     private final int beds;
-    private final int size;      // size in sqft
-    private final double price;  // price per night
+    private final int size;
+    private final double price;
 
     public Room(int beds, int size, double price) {
         this.beds = beds;
@@ -137,12 +97,11 @@ abstract class Room {
         return price;
     }
 
-    // Abstract method to get room type
     public abstract String getRoomType();
 }
 
 /**
- * Concrete class for Single Room.
+ * Room Types
  */
 class SingleRoom extends Room {
     public SingleRoom(int beds, int size, double price) {
@@ -155,9 +114,6 @@ class SingleRoom extends Room {
     }
 }
 
-/**
- * Concrete class for Double Room.
- */
 class DoubleRoom extends Room {
     public DoubleRoom(int beds, int size, double price) {
         super(beds, size, price);
@@ -169,9 +125,6 @@ class DoubleRoom extends Room {
     }
 }
 
-/**
- * Concrete class for Suite Room.
- */
 class SuiteRoom extends Room {
     public SuiteRoom(int beds, int size, double price) {
         super(beds, size, price);
